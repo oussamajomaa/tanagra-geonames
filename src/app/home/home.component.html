@@ -1,0 +1,191 @@
+<div class="tools mat-elevation-z16">
+	<button mat-mini-fab class="primary menu-button-forward" (click)="openTools()" id='forward'>
+		<mat-icon>arrow_forward</mat-icon>
+	</button>
+
+	<button mat-mini-fab class="primary menu-button-back" (click)="closeTools()" id='back'>
+		<mat-icon class="">arrow_back</mat-icon>
+	</button>
+</div>
+
+
+
+<div class="message warning rounded" #message>You must choose a model before uploading a file !</div>
+<div class="content">
+
+	<div class="file mat-elevation-z8 " #tools>
+
+		<!-- Select to choice model -->
+		<div class="mb-2">
+			<mat-select placeholder="Select spacy NLP model" [(ngModel)]="model"
+				(selectionChange)="onSelectModel($event)" class="w-100 p-3 white rounded mat-elevation-z5 btn-title">
+				<mat-option value="english_md">English md</mat-option>
+				<mat-option value="french_sm">French sm</mat-option>
+				<mat-option value="french_md">French md</mat-option>
+				<mat-option value="french_lg">French lg</mat-option>
+				<mat-option value="german_sm">German sm</mat-option>
+				<mat-option value="german_md">German md</mat-option>
+				<mat-option value="german_lg">German lg</mat-option>
+			</mat-select>
+		</div>
+		<!-- Container to display two Buttom -->
+		<div class="d-flex justify-content-between mb-2 buttons">
+			<button mat-raised-button [ngClass]="{'clicked': textArea}" class="primary"
+				style="padding: 5px; width:110px;" (click)="onSelectTextArea($event)">Add text</button>
+			<button mat-raised-button [ngClass]="{'clicked': !textArea}" class="primary"
+				style="padding: 5px; width:110px;" (click)="onSelectUploadFile($event)">Upload file(s)</button>
+		</div>
+		
+
+		<!-- Container to display Text editor -->
+		<div *ngIf="textArea" class="mb-1">
+			<div class="textArea">
+				<textarea placeholder="Add text (max: 130.000 words)" [(ngModel)]="text" rows="4" maxlength="900000"
+					class="rounded">
+				</textarea>
+			</div>
+
+			<div class="d-flex justify-content-between align-items-center">
+				<button *ngIf="textArea" (click)="sendToSpacy($event)" mat-raised-button class="primary btn2"
+					style="padding: 5px; width:110px;" [disabled]="!text || !model">Map</button>
+
+				<button *ngIf="textArea" (click)="clearText()" mat-raised-button style="padding: 5px; width:110px;"
+					class="danger btn2">Clear</button>
+			</div>
+
+			<div *ngIf="results.length === 0 && onClickMap" class="spinner"></div>
+
+			<!--<div *ngIf="results.length === 0 && onClickMap" class="rounded warning p-3 w-100 mt-3">
+				No location found
+				<button class="close" (click)="onCloseAlert()">
+					<span aria-hidden="true">&times;</span>
+				</button>
+			</div>-->
+		</div>
+
+		<!-- Container to display upload file -->
+		<div *ngIf="!textArea" style="cursor: pointer;" (click)="onClickDivFile()">
+			<div *ngIf="results.length === 0 && onClickMap" class="spinner"></div>
+			<label for="fileDropReff" class="dropzone mat-elevation-z8 info">
+				<h5>Click to upload</h5>
+				<img src="assets/icons/upload.png" alt="" class="mb-1">
+				<input type="file" accept=".txt,.zip" [disabled]="!model" (change)="sendToSpacy($event)" #myInput
+					class="mt-1" id="fileDropReff">
+				<h5>File type: txt (max: 1000 KB) or Zip (max: 350 KB)</h5>
+
+			</label>
+		</div>
+
+		<!-- Container to display found location -->
+		<div class="secondary mt-1 p-1 py-1 rounded mat-elevation-z4" *ngIf="results.length>0" >
+			<span class="result-number">{{results.length}}</span>
+			Place(s) found by Spacy and Geonames - 
+			<span class="result-number">{{confirmedLocation.length}}</span> 
+			on map
+		</div>
+		<div class="secondary mt-1 p-2  rounded mat-elevation-z4" *ngIf="results.length>0">
+			<label for="chechbox_all" style="font-weight: bold; color: green;">
+				<input #chechboxAll type="checkbox" id="chechbox_all" (click)="onCheckAll($event)" style="margin-right: 5px;">
+				Select All
+			</label>
+		</div>
+
+
+<!-- modif -->
+		<div  *ngIf="results.length > 0" class="results mt-1 px-1" [ngClass]="{'results1': results.length < 20}">
+			<div *ngFor="let results of doubleArray; let j = index">
+				<div *ngIf="results.list.length > 0" class="secondary my-1 p-1 rounded mat-elevation-z4">
+					<div *ngFor="let item of results.list; let i = index"  > 
+						<label for="chechbox_location{{i}}{{j}}" >
+							<input type="checkbox" 
+								id="chechbox_location{{i}}{{j}}" 
+								(change)="onCheckLocation($event, item)" 
+								class="chechbox"
+								[ngClass]="{'select-first' : i == 0}" 
+								style="margin-right: 5px;">
+							<span class="city">{{item.city}}</span> - {{item.adminName1}} - <span class="country">{{item.country}}</span> - <span style="font-size: 12px; color:green;">{{item.fileName}}</span>
+						</label>
+					</div>
+				</div>
+			</div>
+		</div>
+<!-- fin modif -->
+		<div class="d-flex justify-content-between mt-1" *ngIf="confirmedLocation.length>0">
+			<button (click)="displayOnMap()" class="primary p-2 rounded" *ngIf="results.length > 0">Display on map</button>
+			<button class="primary p-2 rounded" (click)="exportCSV()" >Export to CSV</button>
+			
+		</div>
+	</div>
+
+	<div class="map pr-2">
+		<!-- Container to display MAP -->
+		<div class="p-2" [ngClass]="{'map1' :textArea, 'map2' :!textArea}" id="map" #maps (click)="onMapClick()">
+			<!-- Center Icon -->
+
+			<!-- Afficher le bouton "centrer" en cas de "selecetionner un nom du fichier" -->
+			<button 
+				(click)="onSelectText(textSelected)" 
+				color="light" 
+				mat-mini-fab class="center-button"
+				*ngIf="onCenter && !textArea && !onFirsteCenter">
+				<img src="assets/icons/center.png"  alt="">
+			</button>
+
+			<!-- Afficher le bouton "centrer" en cas de "selecetionner une date du fichier" -->
+			<button 
+				(click)="onSelectDate(dateSelected)" 
+				color="light" 
+				mat-mini-fab class="center-button"
+				*ngIf="!onCenter && !textArea">
+				<img src="assets/icons/center.png"  alt="">
+			</button>
+
+
+			<!-- Afficher le bouton "centrer" en cas de "Saisir un text" -->
+			<button 
+				(click)="displayOnMap()" 
+				color="light"
+				mat-mini-fab class="center-button"
+				*ngIf="onFirsteCenter && !onCenter">
+				<img src="assets/icons/center.png"  alt="">
+			</button>
+
+			<!-- <button class="primary p-2 rounded export-button" (click)="savaAsPng()"> -->
+				<img src="assets/icons/topng.png" width="40" alt="" class="export-button" (click)="savaAsPng()">
+			<!-- </button> -->
+		</div>
+
+		<!-- Container to display bottom of Map -->
+		<div class="row  d-flex items-align-center" [ngClass]="{'slider' :!textArea}" (click)="onMapClick()" >
+			<div class="col mt-1 p-1">
+				<!-- Displays file name on button -->
+				<div class="d-flex justify-content-center align-items-center w-100 px-3" >
+					<div class="" *ngIf="listOfText.length > 1">
+						<button class="light white rounded mat-elevation-z4 m-1" style="border: none;"
+							(click)="onSelectALl()">All files</button>
+					</div>
+					<div *ngIf="listOfText.length > 0" class="">
+						<button *ngFor="let item of listOfText" (click)="onSelectText(item.legend)"
+							class="m-1 rounded mat-elevation-z4 primary btn-file"
+							[ngClass]="{'danger' :item.legend === textSelected , 'primary' :item.legend != text}"
+							style="border: none;">
+							{{item.legend}}
+						</button>
+					</div>
+				</div>
+				<!-- Slider for chronic date -->
+				<!-- <div *ngIf="listOfText.length > 1  && onAllFiles" class="mt-2 px-3"> -->
+				<div *ngIf="listOfText.length > 1 " class="mt-2 px-3" style="position: relative;">
+					<ngx-slider #slider [(value)]="value" [options]="options" [(ngModel)]="dateSelected" 
+						style="position: absolute; left:20px; top:0px; width:95%"
+						(mouseup)="onSelectDate(dateSelected)">
+					</ngx-slider>
+					<span style="position: absolute; left:20px; top:0px; width: 60px;height: 60px;background:#CFCFCF;z-index:20"></span>
+				</div>
+			</div>
+		</div>
+	</div>
+
+</div>
+
+<!--class="row" [ngStyle]="{'height':textArea ? '76vh':'70vh'}"-->
