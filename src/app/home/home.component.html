@@ -29,9 +29,10 @@
 			</mat-select>
 		</div>
 		<!-- Container to display two Buttom -->
-		<div class="d-flex justify-content-between mb-2 buttons">
+		<div class="d-flex justify-content-between align-items-center mb-2 buttons">
 			<button mat-raised-button [ngClass]="{'clicked': textArea}" class="primary"
 				style="padding: 5px; width:110px;" (click)="onSelectTextArea($event)">Add text</button>
+				<span *ngIf="numberWords > 0" class="badge bg-danger text-light">Words {{numberWords}}</span>
 			<button mat-raised-button [ngClass]="{'clicked': !textArea}" class="primary"
 				style="padding: 5px; width:110px;" (click)="onSelectUploadFile($event)">Upload file(s)</button>
 		</div>
@@ -40,7 +41,7 @@
 		<!-- Container to display Text editor -->
 		<div *ngIf="textArea" class="mb-1">
 			<div class="textArea">
-				<textarea placeholder="Add text (max: 130.000 words)" [(ngModel)]="text" rows="4" maxlength="900000"
+				<textarea placeholder="Add text (max: 200 words)" (input)="changeTextArea()" [(ngModel)]="text" rows="4" maxlength="900000"
 					class="rounded">
 				</textarea>
 			</div>

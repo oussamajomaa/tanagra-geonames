@@ -204,8 +204,15 @@ export class HomeComponent {
 		this.results = []
 		this.doubleArray = []
 		this.confirmedLocation = []
+		this.numberWords = 0
 		if (this.map) this.map.remove()
 		this.createMap()
+	}
+
+
+	numberWords = 0
+	changeTextArea(){
+		this.numberWords = this.text.split(' ').length - 1
 	}
 
 	// envoyer le text à SpaCy
@@ -225,45 +232,52 @@ export class HomeComponent {
 
 		if (this.textArea) {
 			if (this.text) {
-				// envoyer un text vers l'api spacy
-				this.http.get(`${environment.url_py}/text`, { params: { text: this.text, model: this.model } }).subscribe((res: any) => {
-
-					// supprimer les espaces and lowercase location
-					res.map(item => {
-						this.spacyList.push({ city: item.city.trim(), fileName: 'textarea', fileDate: 'no date' })
-					})
-
-					this.occurrences = this.spacyList
-					// remove special characters
-					this.spacyList = this.spacyList.filter(item => {
-						return item.city = item.city.replace(/[/\n/\/^#,+()$€~%.!":|_*?<>{}0-9]/g, '')
-					})
-					// Camelcase location
-					this.spacyList = this.spacyList.filter(item => {
-						return item.city = item.city.charAt(0).toUpperCase() + item.city.substring(1)
-					})
-
-					// supprimer les lieux moins de 2 lettres
-					this.spacyList = this.spacyList.filter(item => {
-						return item.city.length > 2
-					})
-
-					// regrouper les nom des lieux selon le lieu
-					let groupLocations = this.fs.groupBy(this.spacyList, item => item.city)
-
-					this.spacyList = []
-					for (let key of groupLocations) {
-						this.spacyList.push({ city: key[0], fileName: key[1][0].fileName, fileDate: key[1][0].fileDate })
-					}
-
-					// récupérer les coordonnées des lieux reconnus par spacy via l'api geonames
-					this.spacyList.forEach(item => {
-						this.geonameSearch(item)
-					})
-					
+				if (this.text.split(' ').length < 201){
+					// envoyer un text vers l'api spacy
+					this.http.get(`${environment.url_py}/text`, { params: { text: this.text, model: this.model } })
+					.subscribe((res: any) => {
+	
+						// supprimer les espaces and lowercase location
+						res.map(item => {
+							this.spacyList.push({ city: item.city.trim(), fileName: 'textarea', fileDate: 'no date' })
+						})
+	
+						this.occurrences = this.spacyList
+						// remove special characters
+						this.spacyList = this.spacyList.filter(item => {
+							return item.city = item.city.replace(/[/\n/\/^#,+()$€~%.!":|_*?<>{}0-9]/g, '')
+						})
+						// Camelcase location
+						this.spacyList = this.spacyList.filter(item => {
+							return item.city = item.city.charAt(0).toUpperCase() + item.city.substring(1)
+						})
+	
+						// supprimer les lieux moins de 2 lettres
+						this.spacyList = this.spacyList.filter(item => {
+							return item.city.length > 2
+						})
+	
+						// regrouper les nom des lieux selon le lieu
+						let groupLocations = this.fs.groupBy(this.spacyList, item => item.city)
+	
+						this.spacyList = []
+						for (let key of groupLocations) {
+							this.spacyList.push({ city: key[0], fileName: key[1][0].fileName, fileDate: key[1][0].fileDate })
+						}
+	
+						// récupérer les coordonnées des lieux reconnus par spacy via l'api geonames
+						this.spacyList.forEach(item => {
+							this.geonameSearch(item)
+						})
+						
+						this.onClickMap = false
+						
+					}, (error) => console.log(error))
+				}
+				else {
 					this.onClickMap = false
-					
-				})
+					alert('Text too large')
+				}
 			}
 		}
 
